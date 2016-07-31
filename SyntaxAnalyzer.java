@@ -394,7 +394,7 @@ class SyntaxAnalyzer {
         varNode.name = String.valueOf(variableCommand.index);
         return;
       case "this":
-        varNode.name = "field_" + variableCommand.index;
+        varNode.name = "field:" + variableCommand.index;
         return;
       case "that":
         varNode.genre = "array";
@@ -406,7 +406,7 @@ class SyntaxAnalyzer {
         varNode.name = "this";
         return;
       default:
-        varNode.name = variableCommand.param + "_" + variableCommand.index;
+        varNode.name = variableCommand.param + ":" + variableCommand.index;
     }
   }
 

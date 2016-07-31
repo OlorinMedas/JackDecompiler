@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -58,6 +59,7 @@ public class JackDecompiler {
       }
     }
 
+    HashMap<String, TypeEntry> symbolTable;
     ListIterator<String> sourceNameIter = sourceList.listIterator();
     BufferedWriter writer = null;
     BufferedWriter xWriter = null;

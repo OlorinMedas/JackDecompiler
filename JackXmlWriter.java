@@ -15,7 +15,7 @@ class JackXmlWriter {
     writer = w;
     syntaxTree = st;
     indent = "";
-    debug = false;
+    debug = true;
   }
 
   private void indent() {

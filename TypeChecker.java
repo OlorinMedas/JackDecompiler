@@ -5,46 +5,23 @@ import java.util.*;
 class TypeChecker {
   private LinkedList<SyntaxNodeWithCounts> syntaxForest;
   private SyntaxNodeWithCounts syntaxTree;
-  private HashMap<String, Type> symbolTable;
+  private HashMap<String, TypeEntry> symbolTable;
   private QuickUnionUF typeGroup;
   private LinkedList<Integer> subroutineIndexList;
-  private LinkedList<SyntaxNode> recheckNodeList;
+  private LinkedList<RecheckEntry> recheckNodeList;
   private ArrayList<String> typeList;
   private boolean isVoidReturned;
   private int staticBaseIndex, fieldBaseIndex,
           parameterBaseIndex, variableIndex;
   private String className;
 
-  private class Type {
-    int index;
-    String type;
-    List<String> parameterTypeList;
-    boolean isMethod;
+  private class RecheckEntry {
+    String name;
+    SyntaxNode node;
 
-    Type(String t) {
-      type = t;
-      parameterTypeList = null;
-      isMethod = false;
-    }
-
-    void addParameter(String parameterType) {
-      if (parameterTypeList == null) {
-        parameterTypeList = new LinkedList<>();
-      }
-      parameterTypeList.add(parameterType);
-    }
-
-    public String toString() {
-      if (isMethod) {
-        String s = type + " (";
-        for (String parameterType : parameterTypeList) {
-          s += parameterType + ", ";
-        }
-        s = s.substring(0, s.length() - 2) + ")";
-        return s;
-      } else {
-        return type;
-      }
+    RecheckEntry(String entryName, SyntaxNode entryNode) {
+      name = entryName;
+      node = entryNode;
     }
   }
 
@@ -98,64 +75,44 @@ class TypeChecker {
       }
     }
 
-    /**
-     * Returns true if the the two sites are in the same component.
-     *
-     * @param  p the integer representing one site
-     * @param  q the integer representing the other site
-     * @return <tt>true</tt> if the two sites <tt>p</tt> and <tt>q</tt> are in the same component;
-     *         <tt>false</tt> otherwise
-     * @throws IndexOutOfBoundsException unless
-     *         both <tt>0 &le; p &lt; n</tt> and <tt>0 &le; q &lt; n</tt>
-     */
-    boolean connected(int p, int q) {
-      return find(p) == find(q);
-    }
-
-    /**
-     * Merges the component containing site <tt>p</tt> with the
-     * the component containing site <tt>q</tt>.
-     *
-     * @param  p the integer representing one site
-     * @param  q the integer representing the other site
-     * @throws IndexOutOfBoundsException unless
-     *         both <tt>0 &le; p &lt; n</tt> and <tt>0 &le; q &lt; n</tt>
-     */
     void union(int p, int q) {
       int rootP = find(p);
       int rootQ = find(q);
       if (rootP == rootQ) return;
 
-      // make smaller root point to larger one
-//
+      // make root of higher index point to one of lower index
+      if (rootP > rootQ) {
         parent[rootP] = rootQ;
-/*        size[rootQ] += size[rootP];
       }
       else {
         parent[rootQ] = rootP;
-        size[rootP] += size[rootQ];
       }
-      */
     }
   }
 
   TypeChecker(LinkedList<SyntaxNodeWithCounts> sf) {
     syntaxForest = sf;
     symbolTable = new HashMap<>();
-    Type intType = new Type("int");
+    typeList = new ArrayList<>(6);
+    TypeEntry intType = new TypeEntry("int");
     intType.index = 0;
+    typeList.add("int");
     symbolTable.put("int", intType);
-    Type boolType = new Type("boolean");
+    TypeEntry boolType = new TypeEntry("boolean");
     boolType.index = 1;
+    typeList.add("boolean");
     symbolTable.put("boolean", boolType);
-    Type charType = new Type("char");
+    TypeEntry charType = new TypeEntry("char");
     charType.index = 2;
+    typeList.add("char");
     symbolTable.put("char", charType);
-    Type stringType = new Type("String");
+    TypeEntry stringType = new TypeEntry("String");
     stringType.index = 3;
+    typeList.add("String");
     symbolTable.put("String", stringType);
-    Type arrayType = new Type("Array");
+    TypeEntry arrayType = new TypeEntry("Array");
     arrayType.index = 4;
+    typeList.add("Array");
     symbolTable.put("Array", arrayType);
     int classIndex = 5;
     for (SyntaxNodeWithCounts classNode : syntaxForest) {
@@ -165,8 +122,9 @@ class TypeChecker {
         case "Output": case "Screen": case "String": case "Sys":
           break;
         default:
-          Type classType = new Type(className);
+          TypeEntry classType = new TypeEntry(className);
           classType.index = classIndex++;
+          typeList.add(className);
           symbolTable.put(className, classType);
       }
     }
@@ -174,182 +132,182 @@ class TypeChecker {
     subroutineIndexList = new LinkedList<>();
     recheckNodeList = new LinkedList<>();
     // Array
-    Type array_new = new Type("Array");
+    TypeEntry array_new = new TypeEntry("Array");
     array_new.addParameter("int");
     symbolTable.put("Array.new", array_new);
-    Type array_dispose = new Type("void");
+    TypeEntry array_dispose = new TypeEntry("void");
     array_dispose.addParameter("void");
     array_dispose.isMethod = true;
     symbolTable.put("Array.dispose", array_dispose);
     // Keyboard
-    Type keyboard_init = new Type("void");
+    TypeEntry keyboard_init = new TypeEntry("void");
     keyboard_init.addParameter("void");
     symbolTable.put("Keyboard.init", keyboard_init);
-    Type keyboard_keypressed = new Type("char");
+    TypeEntry keyboard_keypressed = new TypeEntry("char");
     keyboard_keypressed.addParameter("void");
     symbolTable.put("Keyboard.keypressed", keyboard_keypressed);
-    Type keyboard_readChar = new Type("char");
+    TypeEntry keyboard_readChar = new TypeEntry("char");
     keyboard_readChar.addParameter("void");
     symbolTable.put("Keyboard.readChar", keyboard_readChar);
-    Type keyboard_readLine = new Type("String");
+    TypeEntry keyboard_readLine = new TypeEntry("String");
     keyboard_readLine.addParameter("void");
     symbolTable.put("Keyboard.readLine", keyboard_readLine);
-    Type keyboard_readInt = new Type("int");
+    TypeEntry keyboard_readInt = new TypeEntry("int");
     keyboard_readInt.addParameter("void");
     symbolTable.put("Keyboard.readInt", keyboard_readInt);
     // Math
-    Type math_init = new Type("void");
+    TypeEntry math_init = new TypeEntry("void");
     math_init.addParameter("void");
     symbolTable.put("Math.init", math_init);
-    Type math_abs = new Type("int");
+    TypeEntry math_abs = new TypeEntry("int");
     math_abs.addParameter("int");
     symbolTable.put("Math.abs", math_abs);
-    Type math_multiply = new Type("int");
+    TypeEntry math_multiply = new TypeEntry("int");
     math_multiply.addParameter("int");
     math_multiply.addParameter("int");
     symbolTable.put("Math.multiply", math_multiply);
-    Type math_divide = new Type("int");
+    TypeEntry math_divide = new TypeEntry("int");
     math_divide.addParameter("int");
     math_divide.addParameter("int");
     symbolTable.put("Math.divide", math_divide);
-    Type math_sqrt = new Type("int");
+    TypeEntry math_sqrt = new TypeEntry("int");
     math_sqrt.addParameter("int");
     symbolTable.put("Math.sqrt", math_sqrt);
-    Type math_max = new Type("int");
+    TypeEntry math_max = new TypeEntry("int");
     math_max.addParameter("int");
     math_max.addParameter("int");
     symbolTable.put("Math.max", math_max);
-    Type math_min = new Type("int");
+    TypeEntry math_min = new TypeEntry("int");
     math_min.addParameter("int");
     math_min.addParameter("int");
     symbolTable.put("Math.min", math_min);
     // Memory
-    Type memory_init = new Type("void");
+    TypeEntry memory_init = new TypeEntry("void");
     memory_init.addParameter("void");
     symbolTable.put("Memory.init", memory_init);
-    Type memory_peek = new Type("int");
+    TypeEntry memory_peek = new TypeEntry("int");
     memory_peek.addParameter("int");
     symbolTable.put("Memory.peek", memory_peek);
-    Type memory_poke = new Type("void");
+    TypeEntry memory_poke = new TypeEntry("void");
     memory_poke.addParameter("void");
     symbolTable.put("Memory.poke", memory_poke);
-    Type memory_alloc = new Type("Array");
+    TypeEntry memory_alloc = new TypeEntry("Array");
     memory_alloc.addParameter("int");
     symbolTable.put("Memory.alloc", memory_alloc);
-    Type memory_deAlloc = new Type("void");
+    TypeEntry memory_deAlloc = new TypeEntry("void");
     memory_deAlloc.addParameter("Array");
     symbolTable.put("Memory.deAlloc", memory_deAlloc);
     // Output
-    Type output_init = new Type("void");
+    TypeEntry output_init = new TypeEntry("void");
     output_init.addParameter("void");
     symbolTable.put("Output.init", output_init);
-    Type output_moveCursor = new Type("void");
+    TypeEntry output_moveCursor = new TypeEntry("void");
     output_moveCursor.addParameter("int");
     output_moveCursor.addParameter("int");
     symbolTable.put("Output.moveCursor", output_moveCursor);
-    Type output_printChar = new Type("void");
+    TypeEntry output_printChar = new TypeEntry("void");
     output_printChar.addParameter("char");
     symbolTable.put("Output.printChar", output_printChar);
-    Type output_printString = new Type("String");
+    TypeEntry output_printString = new TypeEntry("String");
     output_printString.addParameter("void");
     symbolTable.put("Output.printString", output_printString);
-    Type output_printInt = new Type("void");
+    TypeEntry output_printInt = new TypeEntry("void");
     output_printInt.addParameter("void");
     symbolTable.put("Output.printInt", output_printInt);
-    Type output_println = new Type("void");
+    TypeEntry output_println = new TypeEntry("void");
     output_println.addParameter("void");
     symbolTable.put("Output.println", output_println);
-    Type output_backSpace = new Type("void");
+    TypeEntry output_backSpace = new TypeEntry("void");
     output_backSpace.addParameter("void");
     symbolTable.put("Output.backSpace", output_backSpace);
     // Screen
-    Type screen_init = new Type("void");
+    TypeEntry screen_init = new TypeEntry("void");
     screen_init.addParameter("void");
     symbolTable.put("Screen.init", screen_init);
-    Type screen_clearScreen = new Type("void");
+    TypeEntry screen_clearScreen = new TypeEntry("void");
     screen_clearScreen.addParameter("void");
     symbolTable.put("Screen.clearScreen", screen_clearScreen);
-    Type screen_setColor = new Type("void");
+    TypeEntry screen_setColor = new TypeEntry("void");
     screen_setColor.addParameter("boolean");
     symbolTable.put("Screen.setColor", screen_setColor);
-    Type screen_drawPixel = new Type("void");
+    TypeEntry screen_drawPixel = new TypeEntry("void");
     screen_drawPixel.addParameter("int");
     screen_drawPixel.addParameter("int");
     symbolTable.put("Screen.drawPixel", screen_drawPixel);
-    Type screen_drawLine = new Type("void");
+    TypeEntry screen_drawLine = new TypeEntry("void");
     screen_drawLine.addParameter("int");
     screen_drawLine.addParameter("int");
     screen_drawLine.addParameter("int");
     screen_drawLine.addParameter("int");
     symbolTable.put("Screen.drawLine", screen_drawLine);
-    Type screen_drawRectangle = new Type("void");
+    TypeEntry screen_drawRectangle = new TypeEntry("void");
     screen_drawRectangle.addParameter("int");
     screen_drawRectangle.addParameter("int");
     screen_drawRectangle.addParameter("int");
     screen_drawRectangle.addParameter("int");
     symbolTable.put("Screen.drawRectangle", screen_drawRectangle);
-    Type screen_drawCircle = new Type("void");
+    TypeEntry screen_drawCircle = new TypeEntry("void");
     screen_drawCircle.addParameter("int");
     screen_drawCircle.addParameter("int");
     screen_drawCircle.addParameter("int");
     symbolTable.put("Screen.drawCircle", screen_drawCircle);
     // String
-    Type string_new = new Type("String");
+    TypeEntry string_new = new TypeEntry("String");
     string_new.addParameter("int");
     symbolTable.put("String.new", string_new);
-    Type string_dispose = new Type("void");
+    TypeEntry string_dispose = new TypeEntry("void");
     string_dispose.addParameter("void");
     string_dispose.isMethod = true;
     symbolTable.put("String.dispose", string_dispose);
-    Type string_length = new Type("int");
+    TypeEntry string_length = new TypeEntry("int");
     string_length.addParameter("void");
     string_length.isMethod = true;
     symbolTable.put("String.length", string_length);
-    Type string_charAt = new Type("char");
+    TypeEntry string_charAt = new TypeEntry("char");
     string_charAt.addParameter("int");
     string_charAt.isMethod = true;
     symbolTable.put("String.charAt", string_charAt);
-    Type string_setCharAt = new Type("void");
+    TypeEntry string_setCharAt = new TypeEntry("void");
     string_setCharAt.addParameter("int");
     string_setCharAt.isMethod = true;
     symbolTable.put("String.setCharAt", string_setCharAt);
-    Type string_appendChar = new Type("String");
+    TypeEntry string_appendChar = new TypeEntry("String");
     string_appendChar.addParameter("char");
     string_appendChar.isMethod = true;
     symbolTable.put("String.appendChar", string_appendChar);
-    Type string_eraseLastChar = new Type("void");
+    TypeEntry string_eraseLastChar = new TypeEntry("void");
     string_eraseLastChar.addParameter("void");
     string_eraseLastChar.isMethod = true;
     symbolTable.put("String.eraseLastChar", string_eraseLastChar);
-    Type string_intValue = new Type("int");
+    TypeEntry string_intValue = new TypeEntry("int");
     string_intValue.addParameter("void");
     string_intValue.isMethod = true;
     symbolTable.put("String.intValue", string_intValue);
-    Type string_setInt = new Type("void");
+    TypeEntry string_setInt = new TypeEntry("void");
     string_setInt.addParameter("int");
     string_setInt.isMethod = true;
     symbolTable.put("String.setInt", string_setInt);
-    Type string_backSpace = new Type("void");
+    TypeEntry string_backSpace = new TypeEntry("void");
     string_backSpace.addParameter("void");
     array_dispose.isMethod = true;
     symbolTable.put("String.backSpace", string_backSpace);
-    Type string_doubleQuote = new Type("void");
+    TypeEntry string_doubleQuote = new TypeEntry("void");
     string_doubleQuote.addParameter("void");
     symbolTable.put("String.doubleQuote", string_doubleQuote);
-    Type string_newLine = new Type("void");
+    TypeEntry string_newLine = new TypeEntry("void");
     string_newLine.addParameter("void");
     symbolTable.put("String.newLine", string_newLine);
     // Sys
-    Type sys_init = new Type("void");
+    TypeEntry sys_init = new TypeEntry("void");
     sys_init.addParameter("void");
     symbolTable.put("Sys.init", sys_init);
-    Type sys_halt = new Type("void");
+    TypeEntry sys_halt = new TypeEntry("void");
     sys_halt.addParameter("void");
     symbolTable.put("Sys.halt", sys_halt);
-    Type sys_wait = new Type("void");
+    TypeEntry sys_wait = new TypeEntry("void");
     sys_wait.addParameter("int");
     symbolTable.put("Sys.wait", sys_wait);
-    Type sys_error = new Type("void");
+    TypeEntry sys_error = new TypeEntry("void");
     sys_error.addParameter("int");
     symbolTable.put("Sys.error", sys_error);
   }
@@ -378,7 +336,7 @@ class TypeChecker {
       subroutineIndexList.add(numOfTypes);
     }
     typeGroup = new QuickUnionUF(numOfTypes);
-    ListIterator<Integer> indexListIter = subroutineIndexList.listIterator(3);
+    ListIterator<Integer> indexListIter = subroutineIndexList.listIterator(2);
     int nextSubroutineIndex = indexListIter.next();
     className = node.name;
     for (SyntaxNode child : node.children) {
@@ -387,10 +345,20 @@ class TypeChecker {
       nextSubroutineIndex = indexListIter.next();
       syntaxTree = (SyntaxNodeWithCounts) child;
       checkNodeType(syntaxTree.getFirstChild());
-    }
-    // symbolTable.put(child.name, new Type("void"));
-    for (SyntaxNode recheckNode : recheckNodeList) {
-        checkNodeType(recheckNode);
+      for (RecheckEntry entry : recheckNodeList) {
+        recheckNodeType(entry);
+      }
+      TypeEntry subroutineType = new TypeEntry(syntaxTree.type);
+      subroutineType.isMethod = syntaxTree.isMethod;
+      for (int i = 0; i < syntaxTree.numOfParameters; i++) {
+        String parameterType = typeList.get(
+                typeGroup.find(parameterBaseIndex + i));
+        subroutineType.addParameter(parameterType);
+      }
+      if (subroutineType.parameterTypeList == null) {
+        subroutineType.addParameter("void");
+      }
+      symbolTable.put(className + "." + syntaxTree.name, subroutineType);
     }
   }
 
@@ -425,8 +393,10 @@ class TypeChecker {
             String exprVarName = expressionNode.getFirstChild().name;
             typeGroup.union(variableIndex(variableNode.name),
                     variableIndex(exprVarName));
-            recheckNodeList.add(expressionNode);
-            recheckNodeList.add(variableNode);
+            recheckNodeList.add(new RecheckEntry(
+                    exprVarName, expressionNode.getFirstChild()));
+            recheckNodeList.add(new RecheckEntry(
+                    variableNode.name, variableNode));
           } else {
             assertVariableType(variableNode, expressionType);
           }
@@ -478,15 +448,20 @@ class TypeChecker {
   }
 
   private void assertVariableType(SyntaxNode node, String type) {
-    node.type = type;
-    Type nodeType = symbolTable.get(type);
-    typeGroup.union(variableIndex(node.name), nodeType.index);
-    symbolTable.put(className + "." + syntaxTree.name + "." + node.name,
-            nodeType);
+    int variableUFIndex = variableIndex(node.name);
+    int variableTypeIndex = typeGroup.find(variableUFIndex);
+    TypeEntry nodeType = symbolTable.get(type);
+    if (variableTypeIndex == variableUFIndex) {
+      node.type = type;
+      typeGroup.union(variableUFIndex, nodeType.index);
+    } else {
+      assert variableTypeIndex == nodeType.index;
+      node.type = type;
+    }
   }
 
   private int variableIndex(String name) {
-    String[] variable = name.split("_");
+    String[] variable = name.split(":");
     int index = Integer.parseInt(variable[1]);
     switch (variable[0]) {
       case "static":
@@ -555,30 +530,41 @@ class TypeChecker {
   }
 
   private String checkVariableType(SyntaxNode node) {
-    Type nodeType = symbolTable.get(node.type);
-    if (nodeType == null) {
+
+    if (node == null) {
       return null;
     } else {
-      return nodeType.type;
+      return node.type;
     }
   }
 
   private void checkSubroutineCallType(SyntaxNode node) {
-    Type nodeType = symbolTable.get(node.name);
+    TypeEntry nodeType = symbolTable.get(node.name);
     if (nodeType == null) {
-      recheckNodeList.add(node);
+      RecheckEntry entry = new RecheckEntry(node.name, node);
+      recheckNodeList.add(entry);
     } else {
       node.type = nodeType.type;
       ListIterator<SyntaxNode> parameterNodeIter =
               node.children.listIterator();
       if (nodeType.isMethod) {
-        node.getFirstChild().type = node.name.split("\\.")[0];
-        parameterNodeIter.next();
+        String callerType = node.name.split("\\.")[0];
+        node.getFirstChild().type = callerType;
+        SyntaxNode objectNode = parameterNodeIter.next();
+        assertVariableType(objectNode, callerType);
+      }
+      if (nodeType.parameterTypeList.size() == 1 &&
+              nodeType.parameterTypeList.get(0).equals("void")) {
+        return;
       }
       for (String parameterType : nodeType.parameterTypeList) {
         assertExpressionType(parameterNodeIter.next(), parameterType);
       }
     }
+  }
+
+  private void recheckNodeType(RecheckEntry entry) {
+    entry.node.type = typeList.get(typeGroup.find(variableIndex(entry.name)));
   }
 
   private void checkReturnVoid(SyntaxNode sn) {
