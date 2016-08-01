@@ -372,7 +372,7 @@ class TypeChecker {
         int localTypeIndex = typeGroup.findType(localBaseIndex + i);
         String localType = "type";
         if (localTypeIndex > 0) {
-          typeList.get(localTypeIndex);
+          localType = typeList.get(localTypeIndex);
         }
         symbolTable.put(className + "." + syntaxTree.name + ".local:" + i,
                 symbolTable.get(localType));
@@ -383,7 +383,7 @@ class TypeChecker {
       int staticTypeIndex = typeGroup.findType(staticBaseIndex + i);
       String staticType = "type";
       if (staticTypeIndex > 0) {
-        typeList.get(staticTypeIndex);
+        staticType = typeList.get(staticTypeIndex);
       }
       symbolTable.put(className + ".static:" + i,
               symbolTable.get(staticType));
@@ -392,7 +392,7 @@ class TypeChecker {
       int fieldTypeIndex = typeGroup.findType(fieldBaseIndex + i);
       String fieldType = "type";
       if (fieldTypeIndex > 0) {
-        typeList.get(fieldTypeIndex);
+        fieldType = typeList.get(fieldTypeIndex);
       }
       symbolTable.put(className + ".field:" + i,
               symbolTable.get(fieldType));
@@ -464,12 +464,6 @@ class TypeChecker {
       case "variable":
         checkVariableType(node);
         break;
-//      case "StringConst":
-//        break;
-//      case "IntConst":
-//        break;
-//      case "KeywordConst":
-//        break;
       case "array":
         outputCheck("Checking array");
         assertVariableType(node, "Array");
