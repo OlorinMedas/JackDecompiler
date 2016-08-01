@@ -11,9 +11,8 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 public class JackDecompiler {
-	static private boolean debug = true;
 
-	private static String removeVMSuffix(String fileName) {
+  private static String removeVMSuffix(String fileName) {
 		return fileName.substring(0, fileName.length() - 3);
 	}
 	
@@ -59,24 +58,25 @@ public class JackDecompiler {
       }
     }
 
-    HashMap<String, TypeEntry> symbolTable;
+    HashMap<String, TypeEntry> symbolTable = new HashMap<>();
     ListIterator<String> sourceNameIter = sourceList.listIterator();
     BufferedWriter writer = null;
     BufferedWriter xWriter = null;
-    TypeChecker typeChecker = new TypeChecker(syntaxForest);
+    TypeChecker typeChecker = new TypeChecker(syntaxForest, symbolTable);
     for (SyntaxNodeWithCounts syntaxTree : syntaxForest) {
       try {
         String sourceName = sourceNameIter.next();
         typeChecker.checkType(syntaxTree);
-        if (debug) {
+        if (Debug.ENABLE_XML) {
           String outputXmlName = removeVMSuffix(sourceName) + ".xml";
           xWriter = new BufferedWriter(new FileWriter(outputXmlName));
-          JackXmlWriter xmlWriter = new JackXmlWriter(xWriter, syntaxTree);
+          JackXmlWriter xmlWriter = new JackXmlWriter(xWriter, syntaxTree,
+                  symbolTable);
           xmlWriter.writeClass();
         }
         String outputJackName = removeVMSuffix(sourceName) + "_.jack";
         writer = new BufferedWriter(new FileWriter(outputJackName));
-        JackWriter jackWriter = new JackWriter(writer, syntaxTree);
+        JackWriter jackWriter = new JackWriter(writer, syntaxTree, symbolTable);
         jackWriter.writeClass();
       } catch (IOException e) {
         e.printStackTrace();
@@ -87,7 +87,6 @@ public class JackDecompiler {
           reader.close();
           assert writer != null;
           writer.close();
-          assert xWriter != null;
           xWriter.close();
         } catch (IOException e) {
           e.printStackTrace();

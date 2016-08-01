@@ -3,27 +3,15 @@ package jackDecompiler;
 import java.util.*;
 
 class TypeChecker {
-  private LinkedList<SyntaxNodeWithCounts> syntaxForest;
   private SyntaxNodeWithCounts syntaxTree;
   private HashMap<String, TypeEntry> symbolTable;
   private QuickUnionUF typeGroup;
   private LinkedList<Integer> subroutineIndexList;
-  private LinkedList<RecheckEntry> recheckNodeList;
   private ArrayList<String> typeList;
   private boolean isVoidReturned;
   private int staticBaseIndex, fieldBaseIndex,
-          parameterBaseIndex, variableIndex;
+          argumentBaseIndex, localBaseIndex;
   private String className;
-
-  private class RecheckEntry {
-    String name;
-    SyntaxNode node;
-
-    RecheckEntry(String entryName, SyntaxNode entryNode) {
-      name = entryName;
-      node = entryNode;
-    }
-  }
 
   /**
    *  @author Robert Sedgewick
@@ -31,6 +19,7 @@ class TypeChecker {
    */
   private class QuickUnionUF {
     private int[] parent;   // parent[i] = parent of i
+    private int[] type;
 //    private int[] size;     // size[i] = number of sites in subtree rooted at i
 
     /**
@@ -43,10 +32,10 @@ class TypeChecker {
      */
     QuickUnionUF(int n) {
       parent = new int[n];
- //     size = new int[n];
+      type = new int[n];
       for (int i = 0; i < n; i++) {
         parent[i] = i;
- //       size[i] = 1;
+        type[i] = i;
       }
     }
 
@@ -58,7 +47,6 @@ class TypeChecker {
      * @throws IndexOutOfBoundsException unless <tt>0 &le; p &lt; n</tt>
      */
     int find(int p) {
-      validate(p);
       while (p != parent[p]) {
         parent[p] = parent[parent[p]];
         p = parent[p];
@@ -66,13 +54,9 @@ class TypeChecker {
       return p;
     }
 
-    // validate that p is a valid index
-    private void validate(int p) {
-      int n = parent.length;
-      if (p < 0 || p >= n) {
-        throw new IndexOutOfBoundsException(
-                "index " + p + " is not between 0 and " + (n-1));
-      }
+    int findType(int p) {
+      int rootP = find(p);
+      return -type[rootP] - 1;
     }
 
     void union(int p, int q) {
@@ -83,38 +67,56 @@ class TypeChecker {
       // make root of higher index point to one of lower index
       if (rootP > rootQ) {
         parent[rootP] = rootQ;
+        type[rootP] = -1;
       }
       else {
         parent[rootQ] = rootP;
+        type[rootQ] = -1;
       }
+    }
+
+    // set the type of connected component of p to t
+    void setType(int p, int t) {
+      int rootP = find(p);
+      type[rootP] = -(t + 1);
     }
   }
 
-  TypeChecker(LinkedList<SyntaxNodeWithCounts> sf) {
-    syntaxForest = sf;
-    symbolTable = new HashMap<>();
-    typeList = new ArrayList<>(6);
+  private void outputCheck(String s) {
+    if (Debug.STDOUT_CHECK) {
+      System.out.println(s + "...");
+    }
+  }
+
+  TypeChecker(LinkedList<SyntaxNodeWithCounts> syntaxForest,
+              HashMap<String, TypeEntry> st) {
+    symbolTable = st;
+    typeList = new ArrayList<>(7);
+    TypeEntry defaultType = new TypeEntry("type");
+    defaultType.index = 0;
+    typeList.add("type");
+    symbolTable.put("type", defaultType);
     TypeEntry intType = new TypeEntry("int");
-    intType.index = 0;
+    intType.index = 1;
     typeList.add("int");
     symbolTable.put("int", intType);
     TypeEntry boolType = new TypeEntry("boolean");
-    boolType.index = 1;
+    boolType.index = 2;
     typeList.add("boolean");
     symbolTable.put("boolean", boolType);
     TypeEntry charType = new TypeEntry("char");
-    charType.index = 2;
+    charType.index = 3;
     typeList.add("char");
     symbolTable.put("char", charType);
     TypeEntry stringType = new TypeEntry("String");
-    stringType.index = 3;
+    stringType.index = 4;
     typeList.add("String");
     symbolTable.put("String", stringType);
     TypeEntry arrayType = new TypeEntry("Array");
-    arrayType.index = 4;
+    arrayType.index = 5;
     typeList.add("Array");
     symbolTable.put("Array", arrayType);
-    int classIndex = 5;
+    int classIndex = 6;
     for (SyntaxNodeWithCounts classNode : syntaxForest) {
       className = classNode.name;
       switch (className) {
@@ -128,9 +130,7 @@ class TypeChecker {
           symbolTable.put(className, classType);
       }
     }
-    staticBaseIndex = classIndex;
     subroutineIndexList = new LinkedList<>();
-    recheckNodeList = new LinkedList<>();
     // Array
     TypeEntry array_new = new TypeEntry("Array");
     array_new.addParameter("int");
@@ -145,15 +145,15 @@ class TypeChecker {
     symbolTable.put("Keyboard.init", keyboard_init);
     TypeEntry keyboard_keypressed = new TypeEntry("char");
     keyboard_keypressed.addParameter("void");
-    symbolTable.put("Keyboard.keypressed", keyboard_keypressed);
+    symbolTable.put("Keyboard.keyPressed", keyboard_keypressed);
     TypeEntry keyboard_readChar = new TypeEntry("char");
     keyboard_readChar.addParameter("void");
     symbolTable.put("Keyboard.readChar", keyboard_readChar);
     TypeEntry keyboard_readLine = new TypeEntry("String");
-    keyboard_readLine.addParameter("void");
+    keyboard_readLine.addParameter("String");
     symbolTable.put("Keyboard.readLine", keyboard_readLine);
     TypeEntry keyboard_readInt = new TypeEntry("int");
-    keyboard_readInt.addParameter("void");
+    keyboard_readInt.addParameter("String");
     symbolTable.put("Keyboard.readInt", keyboard_readInt);
     // Math
     TypeEntry math_init = new TypeEntry("void");
@@ -189,7 +189,8 @@ class TypeChecker {
     memory_peek.addParameter("int");
     symbolTable.put("Memory.peek", memory_peek);
     TypeEntry memory_poke = new TypeEntry("void");
-    memory_poke.addParameter("void");
+    memory_poke.addParameter("int");
+    memory_poke.addParameter("int");
     symbolTable.put("Memory.poke", memory_poke);
     TypeEntry memory_alloc = new TypeEntry("Array");
     memory_alloc.addParameter("int");
@@ -208,11 +209,11 @@ class TypeChecker {
     TypeEntry output_printChar = new TypeEntry("void");
     output_printChar.addParameter("char");
     symbolTable.put("Output.printChar", output_printChar);
-    TypeEntry output_printString = new TypeEntry("String");
-    output_printString.addParameter("void");
+    TypeEntry output_printString = new TypeEntry("void");
+    output_printString.addParameter("String");
     symbolTable.put("Output.printString", output_printString);
     TypeEntry output_printInt = new TypeEntry("void");
-    output_printInt.addParameter("void");
+    output_printInt.addParameter("int");
     symbolTable.put("Output.printInt", output_printInt);
     TypeEntry output_println = new TypeEntry("void");
     output_println.addParameter("void");
@@ -269,6 +270,7 @@ class TypeChecker {
     symbolTable.put("String.charAt", string_charAt);
     TypeEntry string_setCharAt = new TypeEntry("void");
     string_setCharAt.addParameter("int");
+    string_setCharAt.addParameter("char");
     string_setCharAt.isMethod = true;
     symbolTable.put("String.setCharAt", string_setCharAt);
     TypeEntry string_appendChar = new TypeEntry("String");
@@ -287,14 +289,14 @@ class TypeChecker {
     string_setInt.addParameter("int");
     string_setInt.isMethod = true;
     symbolTable.put("String.setInt", string_setInt);
-    TypeEntry string_backSpace = new TypeEntry("void");
+    TypeEntry string_backSpace = new TypeEntry("char");
     string_backSpace.addParameter("void");
     array_dispose.isMethod = true;
     symbolTable.put("String.backSpace", string_backSpace);
-    TypeEntry string_doubleQuote = new TypeEntry("void");
+    TypeEntry string_doubleQuote = new TypeEntry("char");
     string_doubleQuote.addParameter("void");
     symbolTable.put("String.doubleQuote", string_doubleQuote);
-    TypeEntry string_newLine = new TypeEntry("void");
+    TypeEntry string_newLine = new TypeEntry("char");
     string_newLine.addParameter("void");
     symbolTable.put("String.newLine", string_newLine);
     // Sys
@@ -313,6 +315,8 @@ class TypeChecker {
   }
 
   void checkType(SyntaxNodeWithCounts node) {
+    outputCheck("Checking class " + node.name);
+    staticBaseIndex = 0;
     int numOfTypes = staticBaseIndex;
     subroutineIndexList.add(numOfTypes);
     numOfTypes += node.numOfVariables;
@@ -322,17 +326,18 @@ class TypeChecker {
     subroutineIndexList.add(numOfTypes);
     for (SyntaxNode child : node.children) {
       isVoidReturned = true;
-      checkReturnVoid(child);
+      SyntaxNodeWithCounts subroutineNode = (SyntaxNodeWithCounts) child;
+      checkReturnVoid(subroutineNode);
       if (isVoidReturned) {
-        ((SyntaxNodeWithCounts) child).type = "void";
+        subroutineNode.type = "void";
       } else {
         if (child.genre.equals("function")) {
-          checkConstructor(child);
+          checkConstructor(subroutineNode);
         }
       }
-      numOfTypes += ((SyntaxNodeWithCounts) child).numOfParameters;
+      numOfTypes += subroutineNode.numOfParameters;
       subroutineIndexList.add(numOfTypes);
-      numOfTypes += ((SyntaxNodeWithCounts) child).numOfVariables;
+      numOfTypes += subroutineNode.numOfVariables;
       subroutineIndexList.add(numOfTypes);
     }
     typeGroup = new QuickUnionUF(numOfTypes);
@@ -340,25 +345,57 @@ class TypeChecker {
     int nextSubroutineIndex = indexListIter.next();
     className = node.name;
     for (SyntaxNode child : node.children) {
-      parameterBaseIndex = nextSubroutineIndex;
-      variableIndex = indexListIter.next();
+      argumentBaseIndex = nextSubroutineIndex;
+      localBaseIndex = indexListIter.next();
       nextSubroutineIndex = indexListIter.next();
       syntaxTree = (SyntaxNodeWithCounts) child;
+      outputCheck("Checking " + child.genre + " " + child.name);
       checkNodeType(syntaxTree.getFirstChild());
-      for (RecheckEntry entry : recheckNodeList) {
-        recheckNodeType(entry);
-      }
       TypeEntry subroutineType = new TypeEntry(syntaxTree.type);
       subroutineType.isMethod = syntaxTree.isMethod;
       for (int i = 0; i < syntaxTree.numOfParameters; i++) {
-        String parameterType = typeList.get(
-                typeGroup.find(parameterBaseIndex + i));
+        int parameterTypeIndex = typeGroup.findType(argumentBaseIndex + i);
+        String parameterType = "type";
+        if (parameterTypeIndex > 0) {
+          parameterType = typeList.get(parameterTypeIndex);
+        }
         subroutineType.addParameter(parameterType);
       }
       if (subroutineType.parameterTypeList == null) {
         subroutineType.addParameter("void");
       }
-      symbolTable.put(className + "." + syntaxTree.name, subroutineType);
+      TypeEntry entry = symbolTable.get(className + "." + syntaxTree.name);
+      if (entry == null) {
+        symbolTable.put(className + "." + syntaxTree.name, subroutineType);
+      }
+      for (int i = 0; i < syntaxTree.numOfVariables; i++) {
+        int localTypeIndex = typeGroup.findType(localBaseIndex + i);
+        String localType = "type";
+        if (localTypeIndex > 0) {
+          typeList.get(localTypeIndex);
+        }
+        symbolTable.put(className + "." + syntaxTree.name + ".local:" + i,
+                symbolTable.get(localType));
+      }
+      outputCheck("");
+    }
+    for (int i = 0; i < node.numOfVariables; i++) {
+      int staticTypeIndex = typeGroup.findType(staticBaseIndex + i);
+      String staticType = "type";
+      if (staticTypeIndex > 0) {
+        typeList.get(staticTypeIndex);
+      }
+      symbolTable.put(className + ".static:" + i,
+              symbolTable.get(staticType));
+    }
+    for (int i = 0; i < node.numOfParameters; i++) {
+      int fieldTypeIndex = typeGroup.findType(fieldBaseIndex + i);
+      String fieldType = "type";
+      if (fieldTypeIndex > 0) {
+        typeList.get(fieldTypeIndex);
+      }
+      symbolTable.put(className + ".field:" + i,
+              symbolTable.get(fieldType));
     }
   }
 
@@ -371,61 +408,76 @@ class TypeChecker {
         }
         break;
       case "if":
+        outputCheck("Checking if statement");
+        outputCheck("Checking condition expression");
+        assertExpressionType(node.getFirstChild(), "boolean");
+        outputCheck("Checking the true branch");
         if (node.children.size() == 3) {
           checkNodeType(node.getMiddleChild());
+          outputCheck("Checking the false branch");
         }
-      case "while":
         checkNodeType(node.getLastChild());
+        break;
+      case "while":
+        outputCheck("Checking while statement");
+        outputCheck("Checking condition expression");
         assertExpressionType(node.getFirstChild(), "boolean");
+        outputCheck("Checking the loop statements");
+        checkNodeType(node.getLastChild());
         break;
       case "let":
+        outputCheck("Checking let statement");
+        outputCheck("Checking lhs variable");
+        SyntaxNode variableNode = node.getFirstChild();
+        String variableType = checkVariableType(variableNode);
         if (node.children.size() == 3) {
+          outputCheck("Checking array index");
           assertExpressionType(node.getMiddleChild(), "int");
         }
-        SyntaxNode variableNode = node.getFirstChild();
         SyntaxNode expressionNode = node.getLastChild();
-        String variableType = checkVariableType(variableNode);
         if (variableType != null) {
+          outputCheck("Inferring assignment expression type");
           assertExpressionType(expressionNode, variableType);
         } else {
+          outputCheck("Checking assignment expression");
           String expressionType = checkExpressionType(expressionNode);
+          String exprVarName = expressionNode.getFirstChild().name;
           if (expressionType == null) {
-            String exprVarName = expressionNode.getFirstChild().name;
-            typeGroup.union(variableIndex(variableNode.name),
-                    variableIndex(exprVarName));
-            recheckNodeList.add(new RecheckEntry(
-                    exprVarName, expressionNode.getFirstChild()));
-            recheckNodeList.add(new RecheckEntry(
-                    variableNode.name, variableNode));
+            outputCheck("Establish equality");
+            if (exprVarName != null && exprVarName.contains(":")) {
+              typeGroup.union(variableIndex(variableNode.name),
+                      variableIndex(exprVarName));
+            }
           } else {
+            outputCheck("Inferring lhs variable");
             assertVariableType(variableNode, expressionType);
           }
         }
         break;
       case "return":
+        outputCheck("Checking return statement");
         if (syntaxTree.type == null) {
+          outputCheck("Checking return expression");
           syntaxTree.type = checkExpressionType(node.getFirstChild());
         }
         break;
       case "variable":
         checkVariableType(node);
         break;
-      case "StringConst":
-        node.type = "String";
-        break;
-      case "IntConst":
-        node.type = "int";
-        break;
-      case "KeywordConst":
-        if (node.name.equals("this")) {
-          node.type = syntaxTree.type;
-        }
-        break;
+//      case "StringConst":
+//        break;
+//      case "IntConst":
+//        break;
+//      case "KeywordConst":
+//        break;
       case "array":
+        outputCheck("Checking array");
         assertVariableType(node, "Array");
+        outputCheck("Checking array index");
         assertExpressionType(node.getFirstChild(), "int");
         break;
       case "do":
+        outputCheck("Checking do statement");
         node = node.getFirstChild();
       case "subroutineCall":
         checkSubroutineCallType(node);
@@ -448,15 +500,30 @@ class TypeChecker {
   }
 
   private void assertVariableType(SyntaxNode node, String type) {
+    outputCheck("Verifying variable of type " + type);
     int variableUFIndex = variableIndex(node.name);
-    int variableTypeIndex = typeGroup.find(variableUFIndex);
+    int variableTypeIndex = typeGroup.findType(variableUFIndex);
     TypeEntry nodeType = symbolTable.get(type);
-    if (variableTypeIndex == variableUFIndex) {
-      node.type = type;
-      typeGroup.union(variableUFIndex, nodeType.index);
+    if (variableTypeIndex < 0) {
+      // no previous guess of type
+      typeGroup.setType(variableUFIndex, nodeType.index);
     } else {
-      assert variableTypeIndex == nodeType.index;
-      node.type = type;
+      if (variableTypeIndex != nodeType.index) {
+        String variableType = typeList.get(variableTypeIndex);
+        switch (variableType) {
+          case "int":
+            if (!type.equals("boolean")) {
+              typeGroup.setType(variableUFIndex, nodeType.index);
+            }
+            break;
+          case "char":
+            break;
+          case "boolean": case "Array":
+            typeGroup.setType(variableUFIndex, nodeType.index);
+            break;
+          default:
+        }
+      }
     }
   }
 
@@ -469,9 +536,9 @@ class TypeChecker {
       case "field":
         return index + fieldBaseIndex;
       case "argument":
-        return index + parameterBaseIndex;
+        return index + argumentBaseIndex;
       case "local":
-        return index + variableIndex;
+        return index + localBaseIndex;
       default:
         return 0;
     }
@@ -499,25 +566,32 @@ class TypeChecker {
         if (node.name == null) {
           return checkExpressionType(node.getFirstChild());
         } else {
+          outputCheck("Checking " + node.name + " expression");
           switch (node.name) {
             case "add": case "sub": case "neg":
               return "int";
-            case "gt": case "lt": case "eq": case "not":
+            case "gt": case "lt": case "eq": case "not": case "and": case "or":
               return "boolean";
             default:
-              return "";
+              return null;
           }
         }
+      case "array":
+        assertVariableType(node.getFirstChild(), "Array");
+        assertExpressionType(node.getLastChild(), "int");
+        return "int";
       case "variable":
         return checkVariableType(node);
       case "subroutineCall":
-        checkSubroutineCallType(node);
-        return node.type;
+        return checkSubroutineCallType(node);
       case "IntConst":
+        outputCheck("Checking int constant");
         return "int";
       case "StringConst":
+        outputCheck("Checking String constant");
         return "String";
       case "KeywordConst":
+        outputCheck("Checking keyword constant");
         switch (node.name) {
           case "false": case "true":
             return "boolean";
@@ -530,41 +604,38 @@ class TypeChecker {
   }
 
   private String checkVariableType(SyntaxNode node) {
-
-    if (node == null) {
+    outputCheck("Checking variable");
+    int variableUFIndex = variableIndex(node.name);
+    int variableTypeIndex = typeGroup.findType(variableUFIndex);
+    if (variableTypeIndex < 0) {
       return null;
     } else {
-      return node.type;
+      return typeList.get(variableTypeIndex);
     }
   }
 
-  private void checkSubroutineCallType(SyntaxNode node) {
+  private String checkSubroutineCallType(SyntaxNode node) {
+    outputCheck("Checking subroutine call");
     TypeEntry nodeType = symbolTable.get(node.name);
     if (nodeType == null) {
-      RecheckEntry entry = new RecheckEntry(node.name, node);
-      recheckNodeList.add(entry);
+      return null;
     } else {
-      node.type = nodeType.type;
       ListIterator<SyntaxNode> parameterNodeIter =
               node.children.listIterator();
       if (nodeType.isMethod) {
         String callerType = node.name.split("\\.")[0];
-        node.getFirstChild().type = callerType;
+        assertExpressionType(node.getFirstChild(), callerType);
         SyntaxNode objectNode = parameterNodeIter.next();
-        assertVariableType(objectNode, callerType);
+        assertExpressionType(objectNode, callerType);
       }
-      if (nodeType.parameterTypeList.size() == 1 &&
-              nodeType.parameterTypeList.get(0).equals("void")) {
-        return;
+      if (nodeType.parameterTypeList.size() > 1 ||
+              !nodeType.parameterTypeList.get(0).equals("void")) {
+        for (String parameterType : nodeType.parameterTypeList) {
+          assertExpressionType(parameterNodeIter.next(), parameterType);
+        }
       }
-      for (String parameterType : nodeType.parameterTypeList) {
-        assertExpressionType(parameterNodeIter.next(), parameterType);
-      }
+      return nodeType.type;
     }
-  }
-
-  private void recheckNodeType(RecheckEntry entry) {
-    entry.node.type = typeList.get(typeGroup.find(variableIndex(entry.name)));
   }
 
   private void checkReturnVoid(SyntaxNode sn) {
@@ -598,7 +669,7 @@ class TypeChecker {
     }
   }
 
-  private void checkConstructor(SyntaxNode sn) {
+  private void checkConstructor(SyntaxNodeWithCounts sn) {
     SyntaxNode statements = sn.getFirstChild();
     SyntaxNode firstStatement = statements.getFirstChild();
     if (firstStatement.genre.equals("let")) {

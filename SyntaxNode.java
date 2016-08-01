@@ -3,7 +3,7 @@ package jackDecompiler;
 import java.util.LinkedList;
 
 class SyntaxNode {
-	String genre, name, type;
+	String genre, name;
 	int startIndex;
   private int endIndex;
 	LinkedList<SyntaxNode> children;
@@ -11,7 +11,6 @@ class SyntaxNode {
 	SyntaxNode(String nG, String n, int sI, int eI) {
 		genre = nG;
 		name = n;
-    type = null;
 		startIndex = sI;
 		endIndex = eI;
 		children = new LinkedList<>();

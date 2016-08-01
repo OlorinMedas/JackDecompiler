@@ -1,6 +1,7 @@
 package jackDecompiler;
 
 class SyntaxNodeWithCounts extends SyntaxNode {
+	String type;
 	int numOfParameters, numOfVariables;
   boolean isMethod;
 

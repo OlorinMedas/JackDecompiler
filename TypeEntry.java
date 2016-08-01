@@ -3,7 +3,7 @@ package jackDecompiler;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TypeEntry {
+class TypeEntry {
   int index;
   String type;
   List<String> parameterTypeList;

@@ -2,20 +2,23 @@ package jackDecompiler;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.LinkedList;
 
 class JackXmlWriter {
   private BufferedWriter writer;
   private SyntaxNodeWithCounts syntaxTree;
+  private HashMap<String, TypeEntry> symbolTable;
   private String indent, returnType;
-  private boolean debug;
 
-  JackXmlWriter(BufferedWriter w, SyntaxNodeWithCounts st) {
+  JackXmlWriter(BufferedWriter w, SyntaxNodeWithCounts syntaxTree,
+                HashMap<String, TypeEntry> symbolTable) {
     writer = w;
-    syntaxTree = st;
+    this.syntaxTree = syntaxTree;
+    this.symbolTable =symbolTable;
     indent = "";
-    debug = true;
   }
 
   private void indent() {
@@ -33,7 +36,7 @@ class JackXmlWriter {
     }
     writer.write(tag + ">");
     writer.newLine();
-    if (debug) {
+    if (Debug.STDOUT_XML) {
       System.out.print(indent + "<");
       if (isClosing) {
         System.out.print("/");
@@ -45,7 +48,7 @@ class JackXmlWriter {
   private void writeLine(String tag, String value) throws IOException {
     writer.write(indent + "<" + tag + "> " + value + " </" + tag + ">");
     writer.newLine();
-    if (debug) {
+    if (Debug.STDOUT_XML) {
       System.out.println(indent + "<" + tag + "> " + value + " </" + tag + ">");
     }
   }
@@ -73,9 +76,9 @@ class JackXmlWriter {
       } else {
         tag = "refer_";
       }
-      String[] var = variable.split("_");
+      String[] var = variable.split(":");
       tag += var[0] + "_variable_" + var[1];
-      writeLine(tag, variable);
+      writeLine(tag, var[0] + "_" + var[1]);
     }
   }
 
@@ -135,11 +138,28 @@ class JackXmlWriter {
     writeTag("parameterList", false);
     if (node.numOfParameters > 0) {
       indent();
-      writeLine("keyword", "type");
+      ListIterator<String> parameterTypeList = symbolTable.
+              get(syntaxTree.name + "." + node.name).
+              parameterTypeList.listIterator();
+      String parameterType = parameterTypeList.next();
+      switch (parameterType) {
+        case "int": case "char": case "boolean":
+          writeLine("keyword", parameterType);
+          break;
+        default:
+          writeLine("refer_class", parameterType);
+      }
       writeVariable("argument", 0, true);
       for (int i = 1; i < node.numOfParameters; i++) {
         writeLine("symbol", ",");
-        writeLine("keyword", "type");
+        parameterType = parameterTypeList.next();
+        switch (parameterType) {
+          case "int": case "char": case "boolean":
+            writeLine("keyword", parameterType);
+            break;
+          default:
+            writeLine("refer_class", parameterType);
+        }
         writeVariable("argument", i, true);
       }
       unindent();
