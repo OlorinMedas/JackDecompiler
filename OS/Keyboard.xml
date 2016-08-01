@@ -1,0 +1,563 @@
+<class>
+	<keyword> class </keyword>
+	<define_class> Keyboard </define_class>
+	<symbol> { </symbol>
+		<subroutineDec>
+			<keyword> function </keyword>
+			<keyword> void </keyword>
+			<define_subroutine> init </define_subroutine>
+			<symbol> ( </symbol>
+			<parameterList>
+			</parameterList>
+			<symbol> ) </symbol>
+			<subroutineBody>
+				<symbol> { </symbol>
+				<statements>
+					<returnStatement>
+						<keyword> return </keyword>
+						<symbol> ; </symbol>
+					</returnStatement>
+				</statements>
+				<symbol> } </symbol>
+			</subroutineBody>
+		</subroutineDec>
+		<subroutineDec>
+			<keyword> function </keyword>
+			<keyword> int </keyword>
+			<define_subroutine> keyPressed </define_subroutine>
+			<symbol> ( </symbol>
+			<parameterList>
+			</parameterList>
+			<symbol> ) </symbol>
+			<subroutineBody>
+				<symbol> { </symbol>
+				<statements>
+					<returnStatement>
+						<keyword> return </keyword>
+						<expression>
+							<term>
+								<refer_class> Memory </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> peek </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>
+									<expression>
+										<term>
+											<integerConstant> 24576 </integerConstant>
+										</term>
+									</expression>
+								</expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</returnStatement>
+				</statements>
+				<symbol> } </symbol>
+			</subroutineBody>
+		</subroutineDec>
+		<subroutineDec>
+			<keyword> function </keyword>
+			<keyword> char </keyword>
+			<define_subroutine> readChar </define_subroutine>
+			<symbol> ( </symbol>
+			<parameterList>
+			</parameterList>
+			<symbol> ) </symbol>
+			<subroutineBody>
+				<symbol> { </symbol>
+				<varDec>
+					<keyword> var </keyword>
+					<keyword> type </keyword>
+					<define_local_variable_0> local_0 </define_local_variable_0>
+					<symbol> , </symbol>
+					<define_local_variable_1> local_1 </define_local_variable_1>
+					<symbol> ; </symbol>
+				</varDec>
+				<statements>
+					<doStatement>
+						<keyword> do </keyword>
+						<refer_class> Output </refer_class>
+						<symbol> . </symbol>
+						<refer_subroutine> printChar </refer_subroutine>
+						<symbol> ( </symbol>
+						<expressionList>
+							<expression>
+								<term>
+									<integerConstant> 0 </integerConstant>
+								</term>
+							</expression>
+						</expressionList>
+						<symbol> ) </symbol>
+						<symbol> ; </symbol>
+					</doStatement>
+					<whileStatement>
+						<keyword> while </keyword>
+						<symbol> ( </symbol>
+						<expression>
+							<term>
+								<symbol> ( </symbol>
+								<expression>
+									<term>
+										<refer_local_variable_1> local_1 </refer_local_variable_1>
+									</term>
+									<symbol> = </symbol>
+									<term>
+										<integerConstant> 0 </integerConstant>
+									</term>
+								</expression>
+								<symbol> ) </symbol>
+							</term>
+							<symbol> | </symbol>
+							<term>
+								<symbol> ( </symbol>
+								<expression>
+									<term>
+										<refer_local_variable_0> local_0 </refer_local_variable_0>
+									</term>
+									<symbol> &gt; </symbol>
+									<term>
+										<integerConstant> 0 </integerConstant>
+									</term>
+								</expression>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ) </symbol>
+						<symbol> { </symbol>
+						<statements>
+							<letStatement>
+								<keyword> let </keyword>
+								<refer_local_variable_0> local_0 </refer_local_variable_0>
+								<symbol> = </symbol>
+								<expression>
+									<term>
+										<refer_class> Keyboard </refer_class>
+										<symbol> . </symbol>
+										<refer_subroutine> keyPressed </refer_subroutine>
+										<symbol> ( </symbol>
+										<expressionList>  </expressionList>
+										<symbol> ) </symbol>
+									</term>
+								</expression>
+								<symbol> ; </symbol>
+							</letStatement>
+							<ifStatement>
+								<keyword> if </keyword>
+								<symbol> ( </symbol>
+								<expression>
+									<term>
+										<refer_local_variable_0> local_0 </refer_local_variable_0>
+									</term>
+									<symbol> &gt; </symbol>
+									<term>
+										<integerConstant> 0 </integerConstant>
+									</term>
+								</expression>
+								<symbol> ) </symbol>
+								<symbol> { </symbol>
+								<statements>
+									<letStatement>
+										<keyword> let </keyword>
+										<refer_local_variable_1> local_1 </refer_local_variable_1>
+										<symbol> = </symbol>
+										<expression>
+											<term>
+												<refer_local_variable_0> local_0 </refer_local_variable_0>
+											</term>
+										</expression>
+										<symbol> ; </symbol>
+									</letStatement>
+								</statements>
+								<symbol> } </symbol>
+							</ifStatement>
+						</statements>
+						<symbol> } </symbol>
+					</whileStatement>
+					<doStatement>
+						<keyword> do </keyword>
+						<refer_class> Output </refer_class>
+						<symbol> . </symbol>
+						<refer_subroutine> printChar </refer_subroutine>
+						<symbol> ( </symbol>
+						<expressionList>
+							<expression>
+								<term>
+									<refer_class> String </refer_class>
+									<symbol> . </symbol>
+									<refer_subroutine> backSpace </refer_subroutine>
+									<symbol> ( </symbol>
+									<expressionList>  </expressionList>
+									<symbol> ) </symbol>
+								</term>
+							</expression>
+						</expressionList>
+						<symbol> ) </symbol>
+						<symbol> ; </symbol>
+					</doStatement>
+					<doStatement>
+						<keyword> do </keyword>
+						<refer_class> Output </refer_class>
+						<symbol> . </symbol>
+						<refer_subroutine> printChar </refer_subroutine>
+						<symbol> ( </symbol>
+						<expressionList>
+							<expression>
+								<term>
+									<refer_local_variable_1> local_1 </refer_local_variable_1>
+								</term>
+							</expression>
+						</expressionList>
+						<symbol> ) </symbol>
+						<symbol> ; </symbol>
+					</doStatement>
+					<returnStatement>
+						<keyword> return </keyword>
+						<expression>
+							<term>
+								<refer_local_variable_1> local_1 </refer_local_variable_1>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</returnStatement>
+				</statements>
+				<symbol> } </symbol>
+			</subroutineBody>
+		</subroutineDec>
+		<subroutineDec>
+			<keyword> function </keyword>
+			<keyword> String </keyword>
+			<define_subroutine> readLine </define_subroutine>
+			<symbol> ( </symbol>
+			<parameterList>
+				<refer_class> String </refer_class>
+				<define_argument_variable_0> argument_0 </define_argument_variable_0>
+			</parameterList>
+			<symbol> ) </symbol>
+			<subroutineBody>
+				<symbol> { </symbol>
+				<varDec>
+					<keyword> var </keyword>
+					<keyword> type </keyword>
+					<define_local_variable_0> local_0 </define_local_variable_0>
+					<symbol> , </symbol>
+					<define_local_variable_1> local_1 </define_local_variable_1>
+					<symbol> , </symbol>
+					<define_local_variable_2> local_2 </define_local_variable_2>
+					<symbol> , </symbol>
+					<define_local_variable_3> local_3 </define_local_variable_3>
+					<symbol> , </symbol>
+					<define_local_variable_4> local_4 </define_local_variable_4>
+					<symbol> ; </symbol>
+				</varDec>
+				<statements>
+					<letStatement>
+						<keyword> let </keyword>
+						<refer_local_variable_3> local_3 </refer_local_variable_3>
+						<symbol> = </symbol>
+						<expression>
+							<term>
+								<refer_class> String </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> new </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>
+									<expression>
+										<term>
+											<integerConstant> 80 </integerConstant>
+										</term>
+									</expression>
+								</expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</letStatement>
+					<doStatement>
+						<keyword> do </keyword>
+						<refer_class> Output </refer_class>
+						<symbol> . </symbol>
+						<refer_subroutine> printString </refer_subroutine>
+						<symbol> ( </symbol>
+						<expressionList>
+							<expression>
+								<term>
+									<refer_argument_variable_0> argument_0 </refer_argument_variable_0>
+								</term>
+							</expression>
+						</expressionList>
+						<symbol> ) </symbol>
+						<symbol> ; </symbol>
+					</doStatement>
+					<letStatement>
+						<keyword> let </keyword>
+						<refer_local_variable_1> local_1 </refer_local_variable_1>
+						<symbol> = </symbol>
+						<expression>
+							<term>
+								<refer_class> String </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> newLine </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>  </expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</letStatement>
+					<letStatement>
+						<keyword> let </keyword>
+						<refer_local_variable_2> local_2 </refer_local_variable_2>
+						<symbol> = </symbol>
+						<expression>
+							<term>
+								<refer_class> String </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> backSpace </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>  </expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</letStatement>
+					<whileStatement>
+						<keyword> while </keyword>
+						<symbol> ( </symbol>
+						<expression>
+							<term>
+								<symbol> ~ </symbol>
+								<term>
+									<refer_local_variable_4> local_4 </refer_local_variable_4>
+								</term>
+							</term>
+						</expression>
+						<symbol> ) </symbol>
+						<symbol> { </symbol>
+						<statements>
+							<letStatement>
+								<keyword> let </keyword>
+								<refer_local_variable_0> local_0 </refer_local_variable_0>
+								<symbol> = </symbol>
+								<expression>
+									<term>
+										<refer_class> Keyboard </refer_class>
+										<symbol> . </symbol>
+										<refer_subroutine> readChar </refer_subroutine>
+										<symbol> ( </symbol>
+										<expressionList>  </expressionList>
+										<symbol> ) </symbol>
+									</term>
+								</expression>
+								<symbol> ; </symbol>
+							</letStatement>
+							<letStatement>
+								<keyword> let </keyword>
+								<refer_local_variable_4> local_4 </refer_local_variable_4>
+								<symbol> = </symbol>
+								<expression>
+									<term>
+										<refer_local_variable_0> local_0 </refer_local_variable_0>
+									</term>
+									<symbol> = </symbol>
+									<term>
+										<refer_local_variable_1> local_1 </refer_local_variable_1>
+									</term>
+								</expression>
+								<symbol> ; </symbol>
+							</letStatement>
+							<ifStatement>
+								<keyword> if </keyword>
+								<symbol> ( </symbol>
+								<expression>
+									<term>
+										<symbol> ~ </symbol>
+										<term>
+											<refer_local_variable_4> local_4 </refer_local_variable_4>
+										</term>
+									</term>
+								</expression>
+								<symbol> ) </symbol>
+								<symbol> { </symbol>
+								<statements>
+									<ifStatement>
+										<keyword> if </keyword>
+										<symbol> ( </symbol>
+										<expression>
+											<term>
+												<refer_local_variable_0> local_0 </refer_local_variable_0>
+											</term>
+											<symbol> = </symbol>
+											<term>
+												<refer_local_variable_2> local_2 </refer_local_variable_2>
+											</term>
+										</expression>
+										<symbol> ) </symbol>
+										<symbol> { </symbol>
+										<statements>
+											<doStatement>
+												<keyword> do </keyword>
+												<refer_class> String </refer_class>
+												<symbol> . </symbol>
+												<refer_subroutine> eraseLastChar </refer_subroutine>
+												<symbol> ( </symbol>
+												<expressionList>
+													<expression>
+														<term>
+															<refer_local_variable_3> local_3 </refer_local_variable_3>
+														</term>
+													</expression>
+												</expressionList>
+												<symbol> ) </symbol>
+												<symbol> ; </symbol>
+											</doStatement>
+										</statements>
+										<symbol> } </symbol>
+										<keyword> else </keyword>
+										<symbol> { </symbol>
+										<statements>
+											<letStatement>
+												<keyword> let </keyword>
+												<refer_local_variable_3> local_3 </refer_local_variable_3>
+												<symbol> = </symbol>
+												<expression>
+													<term>
+														<refer_class> String </refer_class>
+														<symbol> . </symbol>
+														<refer_subroutine> appendChar </refer_subroutine>
+														<symbol> ( </symbol>
+														<expressionList>
+															<expression>
+																<term>
+																	<refer_local_variable_3> local_3 </refer_local_variable_3>
+																</term>
+															</expression>
+															<symbol> , </symbol>
+															<expression>
+																<term>
+																	<refer_local_variable_0> local_0 </refer_local_variable_0>
+																</term>
+															</expression>
+														</expressionList>
+														<symbol> ) </symbol>
+													</term>
+												</expression>
+												<symbol> ; </symbol>
+											</letStatement>
+										</statements>
+										<symbol> } </symbol>
+									</ifStatement>
+								</statements>
+								<symbol> } </symbol>
+							</ifStatement>
+						</statements>
+						<symbol> } </symbol>
+					</whileStatement>
+					<returnStatement>
+						<keyword> return </keyword>
+						<expression>
+							<term>
+								<refer_local_variable_3> local_3 </refer_local_variable_3>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</returnStatement>
+				</statements>
+				<symbol> } </symbol>
+			</subroutineBody>
+		</subroutineDec>
+		<subroutineDec>
+			<keyword> function </keyword>
+			<keyword> char </keyword>
+			<define_subroutine> readInt </define_subroutine>
+			<symbol> ( </symbol>
+			<parameterList>
+				<refer_class> String </refer_class>
+				<define_argument_variable_0> argument_0 </define_argument_variable_0>
+			</parameterList>
+			<symbol> ) </symbol>
+			<subroutineBody>
+				<symbol> { </symbol>
+				<varDec>
+					<keyword> var </keyword>
+					<keyword> type </keyword>
+					<define_local_variable_0> local_0 </define_local_variable_0>
+					<symbol> , </symbol>
+					<define_local_variable_1> local_1 </define_local_variable_1>
+					<symbol> ; </symbol>
+				</varDec>
+				<statements>
+					<letStatement>
+						<keyword> let </keyword>
+						<refer_local_variable_0> local_0 </refer_local_variable_0>
+						<symbol> = </symbol>
+						<expression>
+							<term>
+								<refer_class> Keyboard </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> readLine </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>
+									<expression>
+										<term>
+											<refer_argument_variable_0> argument_0 </refer_argument_variable_0>
+										</term>
+									</expression>
+								</expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</letStatement>
+					<letStatement>
+						<keyword> let </keyword>
+						<refer_local_variable_1> local_1 </refer_local_variable_1>
+						<symbol> = </symbol>
+						<expression>
+							<term>
+								<refer_class> String </refer_class>
+								<symbol> . </symbol>
+								<refer_subroutine> intValue </refer_subroutine>
+								<symbol> ( </symbol>
+								<expressionList>
+									<expression>
+										<term>
+											<refer_local_variable_0> local_0 </refer_local_variable_0>
+										</term>
+									</expression>
+								</expressionList>
+								<symbol> ) </symbol>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</letStatement>
+					<doStatement>
+						<keyword> do </keyword>
+						<refer_class> String </refer_class>
+						<symbol> . </symbol>
+						<refer_subroutine> dispose </refer_subroutine>
+						<symbol> ( </symbol>
+						<expressionList>
+							<expression>
+								<term>
+									<refer_local_variable_0> local_0 </refer_local_variable_0>
+								</term>
+							</expression>
+						</expressionList>
+						<symbol> ) </symbol>
+						<symbol> ; </symbol>
+					</doStatement>
+					<returnStatement>
+						<keyword> return </keyword>
+						<expression>
+							<term>
+								<refer_local_variable_1> local_1 </refer_local_variable_1>
+							</term>
+						</expression>
+						<symbol> ; </symbol>
+					</returnStatement>
+				</statements>
+				<symbol> } </symbol>
+			</subroutineBody>
+		</subroutineDec>
+	</class>

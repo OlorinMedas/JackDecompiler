@@ -1,0 +1,61 @@
+class Keyboard {
+	
+	function void init () {
+		return;
+	}
+	
+	function int keyPressed () {
+		return Memory.peek(24576);
+	}
+	
+	function char readChar () {
+		local int local_0;
+		local char local_1;
+		
+		do Output.printChar(0);
+		while ((local_1 = 0) | (local_0 > 0)) {
+			let local_0 = Keyboard.keyPressed();
+			if (local_0 > 0) {
+				let local_1 = local_0;
+			}
+		}
+		do Output.printChar(String.backSpace());
+		do Output.printChar(local_1);
+		return local_1;
+	}
+	
+	function String readLine (String argument_0) {
+		local String local_0;
+		local char local_1;
+		local char local_2, local_3;
+		local boolean local_4;
+		
+		let local_3 = String.new(80);
+		do Output.printString(argument_0);
+		let local_1 = String.newLine();
+		let local_2 = String.backSpace();
+		while (~local_4) {
+			let local_0 = Keyboard.readChar();
+			let local_4 = local_0 = local_1;
+			if (~local_4) {
+				if (local_0 = local_2) {
+					do local_3.eraseLastChar();
+				} else {
+					let local_3 = local_3.appendChar(local_0);
+				}
+			}
+		}
+		return local_3;
+	}
+	
+	function char readInt (String argument_0) {
+		local String local_0;
+		local char local_1;
+		
+		let local_0 = Keyboard.readLine(argument_0);
+		let local_1 = local_0.intValue();
+		do local_0.dispose();
+		return local_1;
+	}
+	
+}
